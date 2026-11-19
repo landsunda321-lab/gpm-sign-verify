@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await pool.query('ALTER TABLE gpm_documents ADD COLUMN IF NOT EXISTS signer_title text');
     if(req.method==='GET') {
       const result=await pool.query(
-        'SELECT id,name,number,subject,sifat,tanggal_surat AS "tanggalSurat",created,status,size,activity,elements,file_name AS "fileName", original_blob_path, final_blob_path, updated_at FROM gpm_documents WHERE owner_username=$1 ORDER BY updated_at DESC',
+        'SELECT id,name,number,subject,sifat,tanggal_surat AS "tanggalSurat",signer_name AS "signerName",signer_title AS "signerTitle",created,status,size,activity,elements,file_name AS "fileName", original_blob_path, final_blob_path, updated_at FROM gpm_documents WHERE owner_username=$1 ORDER BY updated_at DESC',
         [session.u]
       );
       return json(res,200,{documents:result.rows});
@@ -51,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           size=EXCLUDED.size,activity=EXCLUDED.activity,elements=EXCLUDED.elements,file_name=EXCLUDED.file_name,
           updated_at=now()
          WHERE gpm_documents.owner_username=EXCLUDED.owner_username
-         RETURNING id,name,number,subject,sifat,tanggal_surat AS "tanggalSurat",created,status,size,activity,elements,file_name AS "fileName",original_blob_path,final_blob_path,updated_at`,
+         RETURNING id,name,number,subject,sifat,tanggal_surat AS "tanggalSurat",signer_name AS "signerName",signer_title AS "signerTitle",created,status,size,activity,elements,file_name AS "fileName",original_blob_path,final_blob_path,updated_at`,
         [d.id,session.u,d.name,d.number,d.subject,d.sifat,d.tanggalSurat||null,d.signerName||null,d.signerTitle||null,d.created,d.status,d.size,d.activity,JSON.stringify(d.elements),d.fileName]
       );
       if(result.rowCount) {
