@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { init, db, getSession, verifyPassword, hashPassword, setSession, json } from './_utils';
+import { init, db, getSession, verifyPassword, hashPassword, setSession, json } from './_utils.js';
 export default async function handler(req:VercelRequest,res:VercelResponse) {
   if(req.method!=='POST') return json(res,405,{error:'Method not allowed'});
   try {
