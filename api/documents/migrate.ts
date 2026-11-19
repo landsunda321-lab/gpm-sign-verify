@@ -18,9 +18,9 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
         WHERE gpm_documents.owner_username=EXCLUDED.owner_username
         RETURNING id`,
         [String(d.id),session.u,String(d.name),String(d.number||d.id),String(d.subject||''),d.created||new Date().toISOString(),String(d.status||'Preparing'),Number(d.size||0),String(d.activity||'Migrated from browser localStorage'),JSON.stringify(Array.isArray(d.elements)?d.elements:[]),String(d.fileName||'')]);
-      if(r.rowCount) saved.push(String(d.id));
+      if(r.rowCount){saved.push(String(d.id));await pool.query('INSERT INTO gpm_document_audit(document_id,owner_username,action,details) VALUES($1,$2,$3,$4::jsonb)',[String(d.id),session.u,'metadata_migrated',JSON.stringify({source:'localStorage'})]);}
     }
-    await pool.query('INSERT INTO gpm_document_audit(document_id,owner_username,action,details) SELECT id,$1,$2,$3::jsonb FROM gpm_documents WHERE owner_username=$1',[session.u,'metadata_migrated',JSON.stringify({count:saved.length})]);
+
     return json(res,200,{migrated:saved.length,ids:saved,note:'Metadata migrated. PDF files must be uploaded separately to cloud storage.'});
   } catch(e) { console.error('document migration error',e); return json(res,500,{error:'Migrasi metadata gagal.'}); }
 }
