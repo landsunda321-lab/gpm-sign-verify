@@ -7,6 +7,8 @@ function normalize(d: any) {
     name: String(d.name || ''),
     number: String(d.number || d.id || ''),
     subject: String(d.subject || ''),
+    sifat: String(d.sifat || 'Biasa'),
+    tanggalSurat: String(d.tanggalSurat || ''),
     created: d.created || new Date().toISOString(),
     status: String(d.status || 'Preparing'),
     size: Number(d.size || 0),
@@ -22,9 +24,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const session=getSession(req);
     if(!session) return json(res,401,{error:'Sesi tidak valid.'});
     const pool=await db();
+    await pool.query("ALTER TABLE gpm_documents ADD COLUMN IF NOT EXISTS sifat text NOT NULL DEFAULT 'Biasa'");
+    await pool.query('ALTER TABLE gpm_documents ADD COLUMN IF NOT EXISTS tanggal_surat date');
     if(req.method==='GET') {
       const result=await pool.query(
-        'SELECT id,name,number,subject,created,status,size,activity,elements,file_name AS "fileName", original_blob_path, final_blob_path, updated_at FROM gpm_documents WHERE owner_username=$1 ORDER BY updated_at DESC',
+        'SELECT id,name,number,subject,sifat,tanggal_surat AS "tanggalSurat",created,status,size,activity,elements,file_name AS "fileName", original_blob_path, final_blob_path, updated_at FROM gpm_documents WHERE owner_username=$1 ORDER BY updated_at DESC',
         [session.u]
       );
       return json(res,200,{documents:result.rows});
@@ -36,15 +40,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const d=normalize(raw);
       if(!d.id || !d.name) continue;
       const result=await pool.query(
-        `INSERT INTO gpm_documents (id,owner_username,name,number,subject,created,status,size,activity,elements,file_name,updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,now())
+        `INSERT INTO gpm_documents (id,owner_username,name,number,subject,sifat,tanggal_surat,created,status,size,activity,elements,file_name,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,now())
          ON CONFLICT (id) DO UPDATE SET
           name=EXCLUDED.name,number=EXCLUDED.number,subject=EXCLUDED.subject,status=EXCLUDED.status,
           size=EXCLUDED.size,activity=EXCLUDED.activity,elements=EXCLUDED.elements,file_name=EXCLUDED.file_name,
           updated_at=now()
          WHERE gpm_documents.owner_username=EXCLUDED.owner_username AND gpm_documents.status <> 'Completed'
-         RETURNING id,name,number,subject,created,status,size,activity,elements,file_name AS "fileName",original_blob_path,final_blob_path,updated_at`,
-        [d.id,session.u,d.name,d.number,d.subject,d.created,d.status,d.size,d.activity,JSON.stringify(d.elements),d.fileName]
+         RETURNING id,name,number,subject,sifat,tanggal_surat AS "tanggalSurat",created,status,size,activity,elements,file_name AS "fileName",original_blob_path,final_blob_path,updated_at`,
+        [d.id,session.u,d.name,d.number,d.subject,d.sifat,d.tanggalSurat||null,d.created,d.status,d.size,d.activity,JSON.stringify(d.elements),d.fileName]
       );
       if(result.rowCount) {
         saved.push(result.rows[0]);
