@@ -16,7 +16,8 @@
     "react-dom": "latest",
     "lucide-react": "latest",
     "recharts": "latest",
-    "qrcode.react": "latest"
+    "qrcode.react": "latest",
+    "pg": "^8.16.3"
   },
   "devDependencies": {}
 }
