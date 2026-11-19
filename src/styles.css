@@ -59,3 +59,6 @@
  .meta-fields input[type=date]{min-height:48px!important;}
  .meta-fields textarea{resize:vertical;}
 }
+
+/* Booking nomor surat module */
+.booking-panel{display:grid;gap:20px}.booking-form,.booking-list{background:#fff;border:1px solid #e1e8f0;border-radius:16px;padding:20px;box-shadow:0 4px 16px rgba(20,40,70,.04)}.booking-form h2{margin:0 0 16px}.booking-form label{display:grid;gap:7px;margin:12px 0;color:#63748a;font-size:13px}.booking-form input,.booking-form select{width:100%;min-height:46px;padding:11px 12px;border:1px solid #dbe4ee;border-radius:10px;background:#fff;font-size:16px;color:#17243a}.booking-form button{margin-top:10px}.booking-table{display:grid;gap:10px}.booking-row{padding:13px;border:1px solid #e7edf4;border-radius:12px;display:grid;gap:5px;overflow-wrap:anywhere}.booking-row strong{font-size:15px;color:#153d70}.booking-row span{font-size:13px;color:#607187}.booking-row small{font-size:12px;color:#78889a}.booking-panel .panel-header{margin-bottom:12px}
