@@ -14,8 +14,8 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       if(!r.rowCount) return json(res,404,{error:'Dokumen tidak ditemukan.'});
       return json(res,200,{document:r.rows[0]});
     }
-    const r=await pool.query('DELETE FROM gpm_documents WHERE id=$1 AND owner_username=$2 RETURNING id',[id,session.u]);
-    if(!r.rowCount) return json(res,404,{error:'Dokumen tidak ditemukan.'});
+    const r=await pool.query("DELETE FROM gpm_documents WHERE id=$1 AND owner_username=$2 AND status <> 'Completed' RETURNING id",[id,session.u]);
+    if(!r.rowCount) { const existing=await pool.query('SELECT status FROM gpm_documents WHERE id=$1 AND owner_username=$2',[id,session.u]); if(existing.rowCount&&existing.rows[0].status==='Completed') return json(res,403,{error:'Dokumen selesai tidak dapat dihapus.'}); return json(res,404,{error:'Dokumen tidak ditemukan.'}); }
     await pool.query('INSERT INTO gpm_document_audit(document_id,owner_username,action) VALUES($1,$2,$3)',[id,session.u,'document_deleted']);
     return json(res,200,{deleted:true});
   } catch(e) { console.error('document api error',e); return json(res,500,{error:'Gagal memproses dokumen.'}); }
