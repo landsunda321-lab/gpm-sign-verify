@@ -14,9 +14,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       if(!d?.id||!d?.name) continue;
       const r=await pool.query(`INSERT INTO gpm_documents(id,owner_username,name,number,subject,created,status,size,activity,elements,file_name,updated_at)
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,now())
-        ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,number=EXCLUDED.number,subject=EXCLUDED.subject,status=EXCLUDED.status,size=EXCLUDED.size,activity=EXCLUDED.activity,elements=EXCLUDED.elements,file_name=EXCLUDED.file_name,updated_at=now()
-        WHERE gpm_documents.owner_username=EXCLUDED.owner_username
-        RETURNING id`,
+        ON CONFLICT(id) DO NOTHING\n        RETURNING id`,
         [String(d.id),session.u,String(d.name),String(d.number||d.id),String(d.subject||''),d.created||new Date().toISOString(),String(d.status||'Preparing'),Number(d.size||0),String(d.activity||'Migrated from browser localStorage'),JSON.stringify(Array.isArray(d.elements)?d.elements:[]),String(d.fileName||'')]);
       if(r.rowCount){saved.push(String(d.id));await pool.query('INSERT INTO gpm_document_audit(document_id,owner_username,action,details) VALUES($1,$2,$3,$4::jsonb)',[String(d.id),session.u,'metadata_migrated',JSON.stringify({source:'localStorage'})]);}
     }
