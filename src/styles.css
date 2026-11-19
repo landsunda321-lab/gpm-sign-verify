@@ -33,3 +33,12 @@
 }
 @media (max-width: 420px){.sidebar{width:86vw;max-width:300px;}.sidebar.sidebar-open:after{inset:0 0 0 min(86vw,300px);}.page-content{padding:14px 12px!important;}.metric-card{padding:11px;gap:8px;}.metric-card>strong{font-size:20px;}.panel-header{gap:8px;flex-wrap:wrap;}.admin-top h1{font-size:18px!important;}}
 @media (min-width:761px){.side-close{display:none!important;}}
+
+/* Force single-column navigation on mobile sidebar */
+@media (max-width: 760px){
+ .sidebar .admin-nav{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important;width:100%!important;}
+ .sidebar .admin-nav button{display:flex!important;width:100%!important;max-width:100%!important;flex:0 0 auto!important;min-width:0!important;height:auto!important;min-height:48px!important;padding:12px 14px!important;white-space:normal!important;}
+ .sidebar .admin-nav button span{flex:1;min-width:0;}
+ .sidebar .admin-nav button.active{box-shadow:inset 4px 0 #d7ad61!important;}
+ .sidebar .side-label{margin-top:8px;}
+}
