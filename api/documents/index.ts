@@ -42,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           name=EXCLUDED.name,number=EXCLUDED.number,subject=EXCLUDED.subject,status=EXCLUDED.status,
           size=EXCLUDED.size,activity=EXCLUDED.activity,elements=EXCLUDED.elements,file_name=EXCLUDED.file_name,
           updated_at=now()
-         WHERE gpm_documents.owner_username=EXCLUDED.owner_username
+         WHERE gpm_documents.owner_username=EXCLUDED.owner_username AND gpm_documents.status <> 'Completed'
          RETURNING id,name,number,subject,created,status,size,activity,elements,file_name AS "fileName",original_blob_path,final_blob_path,updated_at`,
         [d.id,session.u,d.name,d.number,d.subject,d.created,d.status,d.size,d.activity,JSON.stringify(d.elements),d.fileName]
       );
