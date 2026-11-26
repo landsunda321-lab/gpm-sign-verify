@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { put } from '@vercel/blob';
+import { put, get } from '@vercel/blob';
+import { Readable } from 'node:stream';
+import { createHash } from 'node:crypto';
 import { init, getSession, db, json } from '../auth/_utils.js';
 export const config={api:{bodyParser:false}};
 const MAX_BYTES=4*1024*1024;
@@ -23,9 +25,18 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     if(kind==='original'&&doc.rows[0].status==='Completed')return json(res,409,{error:'Dokumen Completed tidak dapat mengganti PDF asli.'});
     const path=`documents/${session.u}/${docId}/${kind}-${Date.now()}.pdf`;
     const blob=await put(path,bytes,{access:'private',contentType:'application/pdf',addRandomSuffix:false});
+    // Read the private object back before recording it as successfully stored.
+    const stored=await get(blob.pathname,{access:'private'});
+    if(!stored||stored.statusCode!==200)throw new Error('PDF tersimpan tetapi tidak dapat dibaca kembali dari cloud.');
+    const storedChunks:Buffer[]=[];
+    for await(const chunk of Readable.fromWeb(stored.stream as any)){storedChunks.push(Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk));}
+    const storedBytes=Buffer.concat(storedChunks);
+    const expectedHash=createHash('sha256').update(bytes).digest('hex');
+    const storedHash=createHash('sha256').update(storedBytes).digest('hex');
+    if(storedBytes.length!==bytes.length||storedHash!==expectedHash||storedBytes.subarray(0,5).toString()!=='%PDF-')throw new Error('Verifikasi baca-ulang PDF dari cloud tidak cocok.');
     const col=kind==='original'?'original_blob_path':'final_blob_path';const urlCol=kind==='original'?'original_blob_url':'final_blob_url';const sizeCol=kind==='original'?'original_blob_size':'final_blob_size';const typeCol=kind==='original'?'original_blob_content_type':'final_blob_content_type';
     await pool.query(`UPDATE gpm_documents SET ${col}=$1,${urlCol}=$2,${sizeCol}=$3,${typeCol}=$4,updated_at=now() WHERE id=$5 AND owner_username=$6`,[blob.pathname,blob.url,bytes.length,'application/pdf',docId,session.u]);
-    await pool.query('INSERT INTO gpm_document_audit(document_id,owner_username,action,details) VALUES($1,$2,$3,$4::jsonb)',[docId,session.u,'file_uploaded',JSON.stringify({kind,size:bytes.length,path:blob.pathname})]);
-    return json(res,200,{pathname:blob.pathname,size:bytes.length,kind,verifiedPdf:true});
+    await pool.query('INSERT INTO gpm_document_audit(document_id,owner_username,action,details) VALUES($1,$2,$3,$4::jsonb)',[docId,session.u,'file_uploaded',JSON.stringify({kind,size:bytes.length,path:blob.pathname,sha256:expectedHash,readBackVerified:true})]);
+    return json(res,200,{pathname:blob.pathname,size:bytes.length,kind,verifiedPdf:true,readBackVerified:true,sha256:expectedHash});
   }catch(e:any){console.error('document upload error',e);return json(res,e?.status||500,{error:e?.status===413?'PDF maksimal 4 MB.':'Upload PDF gagal.'});}
 }
