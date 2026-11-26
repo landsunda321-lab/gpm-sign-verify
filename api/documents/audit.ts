@@ -9,7 +9,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
   if(!session)return json(res,401,{error:'Sesi tidak valid.'});
   const pool=await db();
   if(req.method==='GET'){
-   const result=await pool.query('SELECT id,document_id,action,details,created_at FROM gpm_document_audit WHERE owner_username=$1 ORDER BY created_at DESC LIMIT 100',[session.u]);
+   const result=await pool.query('SELECT * FROM gpm_document_audit WHERE owner_username=$1 ORDER BY ctid DESC LIMIT 100',[session.u]);
    return json(res,200,{audit:result.rows});
   }
   const documentId=String(req.body?.documentId||'');
