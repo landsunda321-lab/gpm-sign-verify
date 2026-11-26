@@ -123,7 +123,7 @@ function App(){
    const link=document.createElement('a');
    const url=URL.createObjectURL(blob);
    link.href=url;
-   link.download=(title||fileName.replace(/\\.pdf$/i,''))+'_signed.pdf';
+   link.download=(title||fileName.replace(/\.pdf$/i,''))+'_signed.pdf';
    link.click();
    setTimeout(()=>URL.revokeObjectURL(url),1000);
    setToast('PDF final berhasil disimpan di cloud dan diunduh. Stempel resmi GPM tertanam bila dipilih. Tanda tangan visual—belum TTE tersertifikasi.');
